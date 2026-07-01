@@ -308,8 +308,9 @@ _CTX_OPTS: dict[str, object] = {
 def fetch_listing_detail(browser: Browser, listing: Listing) -> Listing:
     """Fetch full details for a single listing.
 
-    Creates a fresh browser context each call: Cloudflare limits detail page
-    access to ~2 requests per session, so context isolation is required.
+    Uses a fresh browser context per call: the site's anti-bot layer tends to
+    return empty pages when a single context is reused across many detail
+    fetches, so each fetch is kept independent.
     """
     ctx = browser.new_context(**_CTX_OPTS)  # type: ignore[arg-type]
     try:

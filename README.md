@@ -8,6 +8,7 @@ A personal rental-search agent that scrapes Rightmove (and optionally Zoopla) fo
 ![mypy](https://img.shields.io/badge/mypy-strict-2a6db2)
 ![ruff](https://img.shields.io/badge/lint-ruff-d7ff64)
 ![tests](https://img.shields.io/badge/tests-85%20passing-brightgreen)
+![license](https://img.shields.io/badge/license-PolyForm%20Noncommercial-lightgrey)
 
 ---
 
@@ -43,12 +44,12 @@ flowchart LR
 
 Run once a day (07:00 by default) via a `launchd` LaunchAgent. Each run loads a snapshot of previously-seen listing hashes, scrapes fresh results, filters out anything already emailed, sends whatever's left, and saves the updated snapshot.
 
-## ⚠️ Zoopla support & limitations
+## ⚠️ Zoopla support (experimental)
 
-Zoopla scraping is included (`portals/zoopla.py`, via Playwright) but is **not** part of the automated daily email — it's a manual, on-demand tool (`uv run python main.py scrape-zoopla`) that writes to a local text file. Reasons it's second-class:
+Rightmove is the primary, supported path. Zoopla scraping is included (`portals/zoopla.py`, via Playwright) but is **experimental and disabled by default** — it's never part of the automated daily email, only a manual, on-demand command (`uv run python main.py scrape-zoopla`) that writes to a local text file. Treat it as best-effort:
 
-- **Cloudflare-protected.** Zoopla sits behind a JS challenge. A fresh headless Chromium context passes it, but Cloudflare cuts off a context after ~2 page loads — so a new browser context is spun up for every single detail-page fetch, which is slow.
-- **IP-level rate limiting.** Hammering Zoopla in a short window risks a temporary IP block. Run it sparingly (once a day, max).
+- **Anti-bot protection.** Zoopla uses anti-bot measures that automated access may trip. The Playwright path can be slow, return nothing, or stop working entirely at any time — don't rely on it.
+- **Run it sparingly and politely.** Requests are deliberately slow and single-threaded; be respectful of the site and don't hammer it.
 - **No independent min-beds filter.** Zoopla's search URL encodes bedroom count as a single path segment (e.g. `/1-bedroom/`), not a min/max pair like Rightmove — so `min_beds` in your config has no effect on Zoopla results, only `max_beds`.
 - **Min/max price** works fine (`price_min` / `price_max` are real query params).
 
@@ -109,7 +110,7 @@ models.py              Listing dataclass
 notifier.py            hashing, dedup snapshot, HTML/text email rendering + send
 portals/
   rightmove.py         Rightmove search + detail scraping (httpx)
-  zoopla.py            Zoopla search + detail scraping (Playwright, Cloudflare bypass)
+  zoopla.py            Zoopla search + detail scraping (Playwright, experimental)
 run.py                 cron entry point: scrape → dedup → email
 scraper.py             standalone Rightmove CLI → results.txt
 zoopla_scraper.py      standalone Zoopla CLI → zoopla_results.txt
@@ -127,4 +128,13 @@ uv run --group dev pytest -q       # 85 tests
 
 ## ⚖️ Disclaimer
 
-This is a personal-use tool for checking listings you're personally interested in. It scrapes public search-result pages at a deliberately slow, human-scale pace (rate-limited requests, no parallelism). Rightmove's and Zoopla's terms of service restrict automated access — use at your own discretion, don't hammer their servers, and don't use this for anything beyond your own personal search.
+This is a personal-use tool for checking listings you're personally interested in, provided as-is for educational purposes.
+
+- **Not affiliated.** This project is not affiliated with, endorsed by, or connected to Rightmove or Zoopla in any way. All trademarks belong to their respective owners.
+- **You are responsible for compliance.** Rightmove's and Zoopla's terms of service restrict automated access. You are responsible for complying with each website's terms and applicable law — use at your own discretion and risk.
+- **Personal, non-commercial use only.** Don't use this commercially, run it as a service, or build a product on top of it.
+- **Be respectful.** It scrapes public search-result pages at a deliberately slow, human-scale pace (rate-limited requests, no parallelism). Don't hammer their servers.
+
+## 📄 License
+
+[PolyForm Noncommercial License 1.0.0](LICENSE) — you're free to use, study, and modify this for **non-commercial** purposes. Commercial use is not permitted.

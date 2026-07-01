@@ -10,7 +10,7 @@ from filters import SearchFilters
 from models import Listing
 from portals import zoopla
 
-_CRAWL_DELAY = 1.2  # seconds between page requests (Cloudflare is sensitive)
+_CRAWL_DELAY = 1.2  # seconds between page requests (deliberately slow / polite)
 
 
 def _card(i: int, lst: Listing) -> str:
