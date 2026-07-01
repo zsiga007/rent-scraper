@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "Personal rental search filter"
 requires-python = ">=3.12"
 dependencies = [
-    "curl-cffi>=0.15.0",
     "httpx>=0.28.1",
     "playwright>=1.60.0",
 ]

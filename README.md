@@ -95,7 +95,31 @@ uv run python main.py            # print search URLs (sanity check your filters)
 uv run python run.py             # one full scrape + email run
 ```
 
-**4. Automate it** — a `launchd` LaunchAgent (macOS) runs `run.py` daily and survives sleep/wake, unlike `cron`. See the plist template pattern in the setup notes, drop it in `~/Library/LaunchAgents/`, then:
+**4. Automate it** — a `launchd` LaunchAgent (macOS) runs `run.py` daily and survives sleep/wake, unlike `cron`. Save the template below to `~/Library/LaunchAgents/com.yourname.rent-scraper.plist`, editing the two `/absolute/path/to` values and the `uv` path (`which uv`) for your machine:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.yourname.rent-scraper</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/uv</string>
+    <string>run</string>
+    <string>python</string>
+    <string>run.py</string>
+  </array>
+  <key>WorkingDirectory</key><string>/absolute/path/to/rent-scraper</string>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>0</integer></dict>
+  <key>StandardOutPath</key><string>/absolute/path/to/rent-scraper/data/cron.log</string>
+  <key>StandardErrorPath</key><string>/absolute/path/to/rent-scraper/data/cron.log</string>
+</dict>
+</plist>
+```
+
+Then load it:
 
 ```bash
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.yourname.rent-scraper.plist
