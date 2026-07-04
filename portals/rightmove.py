@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import date
 from typing import Any
 from urllib.parse import urlencode
@@ -196,7 +196,13 @@ def iter_search_results(
     filters: SearchFilters,
     location_id: str,
     location_name: str,
+    on_page: Callable[[int, int], None] | None = None,
 ) -> Iterator[Listing]:
+    """Yield every listing across all result pages.
+
+    If *on_page* is given, it's called once per fetched page with
+    (current_page, total_pages) so callers can drive a progress bar.
+    """
     index = 0
     total_pages: int | None = None
 
@@ -215,6 +221,9 @@ def iter_search_results(
             # live: a search reporting total=42 had real listings all the
             # way out to index=984 (42 pages * 24/page).
             total_pages = int(sr["pagination"]["total"])
+
+        if on_page is not None:
+            on_page(index // _PAGE_SIZE + 1, total_pages)
 
         properties: list[dict[str, Any]] = sr.get("properties", [])
         for raw in properties:

@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 
 import httpx
+from tqdm import tqdm
 
 import config
 import notifier
@@ -61,11 +62,25 @@ def main() -> None:
 
     with httpx.Client(headers=_HEADERS, follow_redirects=True, timeout=20.0) as client:
         print(f"Scanning Rightmove for '{config.RIGHTMOVE_LOCATION_NAME}' …")
+        # disable=None → bar shows in a terminal, silently off in cron/launchd logs.
+        scan_bar = tqdm(desc="  Pages", unit="pg", disable=None, leave=False)
+
+        def _on_page(page: int, total: int) -> None:
+            scan_bar.total = total
+            scan_bar.n = page
+            scan_bar.refresh()
+
         for listing in rightmove.iter_search_results(
-            client, filters, config.RIGHTMOVE_LOCATION_ID, config.RIGHTMOVE_LOCATION_NAME
+            client,
+            filters,
+            config.RIGHTMOVE_LOCATION_ID,
+            config.RIGHTMOVE_LOCATION_NAME,
+            on_page=_on_page,
         ):
             all_candidates.append(listing)
+            scan_bar.set_postfix_str(f"{len(all_candidates)} listings", refresh=False)
             time.sleep(_CRAWL_DELAY)
+        scan_bar.close()
 
     date_matches = [c for c in all_candidates if f.available_from.contains(c.available_from)]
     print(f"  {len(all_candidates)} scanned · {len(date_matches)} in date window")
@@ -73,13 +88,16 @@ def main() -> None:
     # ── Fetch details for date-matching listings ───────────────────────────────
     detailed = []
     with httpx.Client(headers=_HEADERS, follow_redirects=True, timeout=20.0) as client:
-        for i, lst in enumerate(date_matches, 1):
+        detail_bar = tqdm(
+            date_matches, desc="  Details", unit="listing", disable=None, leave=False
+        )
+        for i, lst in enumerate(detail_bar, 1):
             try:
                 full = rightmove.fetch_listing_detail(client, lst)
                 detailed.append(full)
             except Exception as exc:
                 detailed.append(lst)
-                print(f"  detail [{i}/{len(date_matches)}] failed: {exc}")
+                tqdm.write(f"  detail [{i}/{len(date_matches)}] failed: {exc}")
             time.sleep(_CRAWL_DELAY)
 
     # ── Filter by furnished status (only knowable after detail fetch) ─────────
