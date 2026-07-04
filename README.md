@@ -65,20 +65,27 @@ uv run playwright install chromium   # only needed for Zoopla
 **1. Configure your search:**
 
 ```bash
-cp config.example.py config.py
+cp config.example.yaml config.yaml
 ```
 
-`config.py` is gitignored — it's yours to edit freely and it'll never end up in a commit. Fill in:
+`config.yaml` is gitignored — it's yours to edit freely and it'll never end up in a commit. Fill in:
 
-| Field | Meaning |
+| Key | Meaning |
 |---|---|
-| `RIGHTMOVE_LOCATION_ID` / `RIGHTMOVE_LOCATION_NAME` | Find via a manual Rightmove search — copy `locationIdentifier` from the URL |
-| `FILTERS.max_beds` / `min_beds` | Bedroom range (`min_beds=None` = no minimum) |
-| `FILTERS.max_price_pcm` / `min_price_pcm` | Monthly rent range in GBP |
-| `FILTERS.radius_miles` | Search radius from the location |
-| `FILTERS.available_from` | `DateWindow(earliest=..., latest=...)` — the two-sided filter described above |
-| `FILTERS.furnished_only` | Requires furnished; also excludes listings later confirmed unfurnished |
-| `EMAIL_SENDER` / `EMAIL_RECIPIENTS` | Gmail address to send from / list of recipients |
+| `rightmove.location_id` / `location_name` | Find via a manual Rightmove search — copy `locationIdentifier` from the URL |
+| `zoopla.location` | `"<place>, London"` — only used by the experimental `scrape-zoopla` command |
+| `filters.max_beds` / `min_beds` | Bedroom range (`min_beds: null` = no minimum) |
+| `filters.max_price_pcm` / `min_price_pcm` | Monthly rent range in GBP |
+| `filters.radius_miles` | Search radius from the location |
+| `filters.available_from` | `earliest` / `latest` — the two-sided date window described above |
+| `filters.furnished_only` | Requires furnished; also excludes listings later confirmed unfurnished |
+| `email.sender` / `email.recipients` | Gmail address to send from / list of recipients |
+
+Keep several searches side by side (e.g. `work.yaml`, `weekend.yaml`) and pick one per run:
+
+```bash
+RENT_SCRAPER_CONFIG=work.yaml uv run python run.py
+```
 
 **2. Add your Gmail app password** — generate one at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords), then:
 
@@ -128,7 +135,8 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.yourname.rent-scrape
 ## 🗂️ Project structure
 
 ```
-config.example.py      template — copy to config.py (gitignored) and fill in your own values
+config.example.yaml    template — copy to config.yaml (gitignored) and fill in your own values
+config.py              loads config.yaml into typed SearchFilters/DateWindow objects
 filters.py             SearchFilters / DateWindow dataclasses
 models.py              Listing dataclass
 notifier.py            hashing, dedup snapshot, HTML/text email rendering + send

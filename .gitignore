@@ -8,7 +8,7 @@ dist/
 build/
 .env
 secret.txt
-config.py
+config.yaml
 .mypy_cache/
 .ruff_cache/
 .claude/

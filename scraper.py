@@ -5,6 +5,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 import httpx
+from tqdm import tqdm
 
 from filters import SearchFilters
 from models import Listing
@@ -54,16 +55,21 @@ def run(
         # ── Pass 1: collect all pre-filtered results ──────────────────────────
         print(f"Scanning Rightmove results for '{location_name}' …")
         candidates: list[Listing] = []
-        page = 0
-        for listing in rightmove.iter_search_results(client, filters, location_id, location_name):
+        # disable=None → bar shows in a terminal, silently off when piped/redirected.
+        scan_bar = tqdm(desc="  Pages", unit="pg", disable=None, leave=False)
+
+        def _on_page(page: int, total: int) -> None:
+            scan_bar.total = total
+            scan_bar.n = page
+            scan_bar.refresh()
+
+        for listing in rightmove.iter_search_results(
+            client, filters, location_id, location_name, on_page=_on_page
+        ):
             candidates.append(listing)
-            if len(candidates) % 24 == 0:
-                page += 1
-                in_window = sum(
-                    1 for c in candidates if filters.available_from.contains(c.available_from)
-                )
-                print(f"  page {page}: {len(candidates)} total, {in_window} in date window so far")
+            scan_bar.set_postfix_str(f"{len(candidates)} listings", refresh=False)
             time.sleep(_CRAWL_DELAY)
+        scan_bar.close()
 
         date_matches = [c for c in candidates if filters.available_from.contains(c.available_from)]
         print(
@@ -75,17 +81,17 @@ def run(
         # ── Pass 2: fetch details only for date-matching listings ─────────────
         print("\nFetching details for matching listings …")
         detailed: list[Listing] = []
-        for i, lst in enumerate(date_matches, 1):
+        detail_bar = tqdm(
+            date_matches, desc="  Details", unit="listing", disable=None, leave=False
+        )
+        for i, lst in enumerate(detail_bar, 1):
             try:
                 full = rightmove.fetch_listing_detail(client, lst)
                 detailed.append(full)
-                print(
-                    f"  [{i}/{len(date_matches)}] ✓  {full.address}  "
-                    f"·  {full.furnish_type or '?'}  ·  deposit £{full.deposit or '?'}"
-                )
+                detail_bar.set_postfix_str(str(full.address or ""), refresh=False)
             except Exception as exc:
                 detailed.append(lst)  # keep with partial data
-                print(f"  [{i}/{len(date_matches)}] !  {lst.address}  ({exc})")
+                tqdm.write(f"  [{i}/{len(date_matches)}] failed: {lst.address}  ({exc})")
             time.sleep(_CRAWL_DELAY)
 
         if filters.furnished_only:

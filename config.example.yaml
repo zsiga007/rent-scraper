@@ -1,0 +1,44 @@
+# ── rent-scraper config ───────────────────────────────────────────────────────
+# Copy this file to config.yaml and edit it with your own values:
+#
+#     cp config.example.yaml config.yaml
+#
+# config.yaml is gitignored, so your personal filters, emails, and location
+# never end up in git history. To run against a different config file, point the
+# RENT_SCRAPER_CONFIG env var at it:
+#
+#     RENT_SCRAPER_CONFIG=work.yaml uv run python run.py
+
+rightmove:
+  # Find these by doing a manual search on rightmove.co.uk and copying
+  # `locationIdentifier` out of the URL (e.g. "STATION^12345" or "REGION^87526").
+  location_id: "STATION^12345"    # example placeholder — replace with your own
+  location_name: "King's Cross Station"
+
+zoopla:
+  # Zoopla is experimental (manual `scrape-zoopla` only). Format: "<place>, London".
+  location: "King's Cross Station, London"
+
+filters:
+  max_beds: 1
+  min_beds: null            # null = no minimum
+  max_price_pcm: 2000
+  min_price_pcm: null       # null = no minimum
+  radius_miles: 3.0
+  available_from:
+    # The killer feature: a *two-sided* window. Only listings whose move-in
+    # date falls between earliest and latest (inclusive) are kept — so you never
+    # see "available now" noise or places that won't be ready for months.
+    earliest: 2026-09-01
+    latest: 2026-09-30
+  exclude_student: true
+  exclude_retirement: true
+  exclude_house_share: true
+  furnished_only: true       # also drops listings later confirmed unfurnished
+
+email:
+  sender: "you@gmail.com"
+  recipients:
+    - "you@gmail.com"
+  # Gmail app-password file (one line), relative to the project root. Never commit it.
+  secret_file: "secret.txt"
