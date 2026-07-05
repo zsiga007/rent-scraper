@@ -15,4 +15,4 @@ config.yaml
 results.txt
 zoopla_results.txt
 data/seen*.json
-data/cron.log
+data/*.log

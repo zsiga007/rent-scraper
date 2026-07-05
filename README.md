@@ -102,35 +102,23 @@ uv run python main.py            # print search URLs (sanity check your filters)
 uv run python run.py             # one full scrape + email run
 ```
 
-**4. Automate it** — a `launchd` LaunchAgent (macOS) runs `run.py` daily and survives sleep/wake, unlike `cron`. Save the template below to `~/Library/LaunchAgents/com.yourname.rent-scraper.plist`, editing the two `/absolute/path/to` values and the `uv` path (`which uv`) for your machine:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key><string>com.yourname.rent-scraper</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>/opt/homebrew/bin/uv</string>
-    <string>run</string>
-    <string>python</string>
-    <string>run.py</string>
-  </array>
-  <key>WorkingDirectory</key><string>/absolute/path/to/rent-scraper</string>
-  <key>StartCalendarInterval</key>
-  <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>0</integer></dict>
-  <key>StandardOutPath</key><string>/absolute/path/to/rent-scraper/data/cron.log</string>
-  <key>StandardErrorPath</key><string>/absolute/path/to/rent-scraper/data/cron.log</string>
-</dict>
-</plist>
-```
-
-Then load it:
+**4. Automate it** — [`scheduler.py`](scheduler.py) runs the scrape on a fixed daily schedule (**07:00 and 15:00 `Europe/London`** by default, DST-aware). Because it keeps your logged-in session — network, credentials, an awake machine — it sidesteps the classic "the job fired at 7am but the laptop was asleep / had no keychain" problem. Run it inside a `screen` session so it survives terminal disconnects while you stay logged in:
 
 ```bash
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.yourname.rent-scraper.plist
+# from the repo directory:
+screen -S rent-scraper -dm bash -lc 'uv run python scheduler.py >> data/scheduler.log 2>&1'
+
+screen -r rent-scraper        # reattach  (detach again with Ctrl-A then D)
+tail -f data/scheduler.log    # or just watch the log
 ```
+
+Change the times with a comma-separated 24-hour list:
+
+```bash
+RENT_SCRAPER_AT=08:30,18:00 uv run python scheduler.py
+```
+
+A `screen` session survives terminal/SSH disconnects but **not** a reboot or logout — just re-run the command above to restart it. If you'd rather it survive reboots headlessly, wire `run.py` into a `launchd` LaunchAgent (macOS) or a cron job instead.
 
 ## 🗂️ Project structure
 
