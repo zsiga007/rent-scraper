@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from collections.abc import Callable, Iterator
 from datetime import date
 from typing import Any
@@ -23,6 +24,33 @@ _HEADERS: dict[str, str] = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-GB,en;q=0.9",
 }
+
+
+# ── Fetching (with retry) ─────────────────────────────────────────────────────
+
+_MAX_ATTEMPTS = 3
+_RETRY_BACKOFF = 2.0  # seconds; grows per attempt (2s, 4s …)
+
+
+def _fetch_parsed[T](client: httpx.Client, url: str, parse: Callable[[str], T]) -> T:
+    """GET *url* and run *parse* on the body, retrying transient failures.
+
+    Rightmove occasionally serves an interstitial or a truncated page — often
+    right after the network returns from sleep — which surfaces as a missing
+    ``__NEXT_DATA__`` / ``__PAGE_MODEL`` block. A short backoff clears it.
+    """
+    last_exc: Exception | None = None
+    for attempt in range(_MAX_ATTEMPTS):
+        try:
+            resp = client.get(url)
+            resp.raise_for_status()
+            return parse(resp.text)
+        except (httpx.HTTPError, ValueError) as exc:
+            last_exc = exc
+            if attempt < _MAX_ATTEMPTS - 1:
+                time.sleep(_RETRY_BACKOFF * (attempt + 1))
+    assert last_exc is not None
+    raise last_exc
 
 
 # ── URL builder ──────────────────────────────────────────────────────────────
@@ -208,10 +236,7 @@ def iter_search_results(
 
     while True:
         url = build_search_url(filters, location_id, location_name, index)
-        resp = client.get(url)
-        resp.raise_for_status()
-
-        data = _get_next_data(resp.text)
+        data = _fetch_parsed(client, url, _get_next_data)
         sr: dict[str, Any] = data["props"]["pageProps"]["searchResults"]
 
         if total_pages is None:
@@ -239,10 +264,7 @@ def iter_search_results(
 
 def fetch_listing_detail(client: httpx.Client, listing: Listing) -> Listing:
     """Fetch deposit, furnish type, full description from the property page."""
-    resp = client.get(listing.url)
-    resp.raise_for_status()
-
-    model = _get_page_model(resp.text)
+    model = _fetch_parsed(client, listing.url, _get_page_model)
     pd: dict[str, Any] = model.get("propertyData", {})
 
     lettings_raw = pd.get("lettings", {})

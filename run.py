@@ -70,16 +70,24 @@ def main() -> None:
             scan_bar.n = page
             scan_bar.refresh()
 
-        for listing in rightmove.iter_search_results(
-            client,
-            filters,
-            config.RIGHTMOVE_LOCATION_ID,
-            config.RIGHTMOVE_LOCATION_NAME,
-            on_page=_on_page,
-        ):
-            all_candidates.append(listing)
-            scan_bar.set_postfix_str(f"{len(all_candidates)} listings", refresh=False)
-            time.sleep(_CRAWL_DELAY)
+        try:
+            for listing in rightmove.iter_search_results(
+                client,
+                filters,
+                config.RIGHTMOVE_LOCATION_ID,
+                config.RIGHTMOVE_LOCATION_NAME,
+                on_page=_on_page,
+            ):
+                all_candidates.append(listing)
+                scan_bar.set_postfix_str(f"{len(all_candidates)} listings", refresh=False)
+                time.sleep(_CRAWL_DELAY)
+        except Exception as exc:
+            scan_bar.close()
+            print(
+                f"Rightmove scan failed after retries: {exc} — skipping this run.",
+                file=sys.stderr,
+            )
+            return
         scan_bar.close()
 
     date_matches = [c for c in all_candidates if f.available_from.contains(c.available_from)]
