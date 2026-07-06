@@ -77,7 +77,11 @@ FILTERS = SearchFilters(
 # ── Email ─────────────────────────────────────────────────────────────────────
 
 EMAIL_SENDER: str = _email["sender"]
+EMAIL_SENDER_NAME: str | None = _email.get("sender_name")
 EMAIL_RECIPIENTS: list[str] = list(_email["recipients"])
+# SMTP server used to send the notification email (defaults to Gmail).
+SMTP_HOST: str = _email.get("smtp_host", "smtp.gmail.com")
+SMTP_PORT: int = int(_email.get("smtp_port", 465))
 # File containing the Gmail app-password (one line). Never commit this file.
 SECRET_FILE: Path = _ROOT / _email.get("secret_file", "secret.txt")
 

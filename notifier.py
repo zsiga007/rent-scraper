@@ -7,6 +7,7 @@ import textwrap
 from datetime import date
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr
 from pathlib import Path
 
 from models import Listing
@@ -159,13 +160,16 @@ def send_email(
     password: str,
     recipients: list[str],
     filters_summary: str = "",
+    smtp_host: str = "smtp.gmail.com",
+    smtp_port: int = 465,
+    sender_name: str | None = None,
 ) -> None:
     today = date.today().isoformat()
     subject = f"[Rent] {len(listings)} new listing{'s' if len(listings) != 1 else ''} – {today}"
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = sender
+    msg["From"] = formataddr((sender_name, sender)) if sender_name else sender
     msg["To"] = ", ".join(recipients)
 
     text_body = "\n\n".join(_text_card(i, lst) for i, lst in enumerate(listings, 1))
@@ -174,6 +178,6 @@ def send_email(
     msg.attach(MIMEText(text_body, "plain", "utf-8"))
     msg.attach(MIMEText(html_body, "html", "utf-8"))
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+    with smtplib.SMTP_SSL(smtp_host, smtp_port) as smtp:
         smtp.login(sender, password)
         smtp.sendmail(sender, recipients, msg.as_string())

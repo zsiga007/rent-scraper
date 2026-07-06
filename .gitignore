@@ -8,7 +8,12 @@ dist/
 build/
 .env
 secret.txt
-config.yaml
+# Ignore all YAML config files (they hold personal filters/emails) …
+*.yaml
+*.yml
+# … except the committed templates.
+!*.example.yaml
+!*.example.yml
 .mypy_cache/
 .ruff_cache/
 .claude/

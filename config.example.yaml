@@ -38,7 +38,12 @@ filters:
 
 email:
   sender: "you@gmail.com"
+  # Display name shown in the "From" field. Optional — omit for a bare address.
+  sender_name: "Rent Scraper"
   recipients:
     - "you@gmail.com"
+  # SMTP server used to send mail. Defaults to Gmail; override for another provider.
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 465
   # Gmail app-password file (one line), relative to the project root. Never commit it.
   secret_file: "secret.txt"

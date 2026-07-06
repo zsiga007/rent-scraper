@@ -139,6 +139,9 @@ def main() -> None:
             password=password,
             recipients=config.EMAIL_RECIPIENTS,
             filters_summary=_filters_summary(),
+            smtp_host=config.SMTP_HOST,
+            smtp_port=config.SMTP_PORT,
+            sender_name=config.EMAIL_SENDER_NAME,
         )
         print("Email sent ✓")
     except Exception as exc:
