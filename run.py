@@ -96,9 +96,7 @@ def main() -> None:
     # ── Fetch details for date-matching listings ───────────────────────────────
     detailed = []
     with httpx.Client(headers=_HEADERS, follow_redirects=True, timeout=20.0) as client:
-        detail_bar = tqdm(
-            date_matches, desc="  Details", unit="listing", disable=None, leave=False
-        )
+        detail_bar = tqdm(date_matches, desc="  Details", unit="listing", disable=None, leave=False)
         for i, lst in enumerate(detail_bar, 1):
             try:
                 full = rightmove.fetch_listing_detail(client, lst)
