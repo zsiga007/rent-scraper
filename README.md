@@ -79,7 +79,9 @@ cp config.example.yaml config.yaml
 | `filters.radius_miles` | Search radius from the location |
 | `filters.available_from` | `earliest` / `latest` — the two-sided date window described above |
 | `filters.furnished_only` | Requires furnished; also excludes listings later confirmed unfurnished |
-| `email.sender` / `email.recipients` | Gmail address to send from / list of recipients |
+| `email.sender` / `email.recipients` | Address to send from / list of recipients |
+| `email.sender_name` | Optional display name shown in the `From` field |
+| `email.smtp_host` / `smtp_port` | SMTP server to send through (defaults to `smtp.gmail.com:465`) |
 
 Keep several searches side by side (e.g. `work.yaml`, `weekend.yaml`) and pick one per run:
 
