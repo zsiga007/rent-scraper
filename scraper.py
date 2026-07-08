@@ -81,9 +81,7 @@ def run(
         # ── Pass 2: fetch details only for date-matching listings ─────────────
         print("\nFetching details for matching listings …")
         detailed: list[Listing] = []
-        detail_bar = tqdm(
-            date_matches, desc="  Details", unit="listing", disable=None, leave=False
-        )
+        detail_bar = tqdm(date_matches, desc="  Details", unit="listing", disable=None, leave=False)
         for i, lst in enumerate(detail_bar, 1):
             try:
                 full = rightmove.fetch_listing_detail(client, lst)
